@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>معلمي الذكي المتقدم - تعلم الإنجليزية باستمتاع</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Fredoka:wght@400;600;700&display=swap');
+        
+        body {
+            font-family: 'Cairo', sans-serif;
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            min-height: 100vh;
+            color: #1e293b;
+            overflow-x: hidden;
+        }
+
+        .font-english {
+            font-family: 'Fredoka', cursive, sans-serif;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .animate-float {
+            animation: float 3s infinite ease-in-out;
+        }
+
+        @keyframes pop {
+            0% { transform: scale(0.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .animate-pop {
+            animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 9999px;
+        }
+
+        .touch-target {
+            min-height: 64px;
+            min-width: 64px;
+        }
+
+        canvas {
+            touch-action: none;
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen">
+
+    <header class="bg-white shadow-lg px-4 py-3 sticky top-0 z-50 flex items-center justify-between border-b-4 border-emerald-500">
+        <div class="flex items-center gap-3">
+            <button onclick="navigateHome()" class="bg-emerald-500 hover:bg-emerald-600 text-white font-black px-5 py-3 rounded-2xl shadow-md touch-target flex items-center gap-2 text-xl transition transform active:scale-95">
+                🏠 <span class="hidden sm:inline">الرئيسية</span>
+            </button>
+            <div id="header-title" class="text-lg sm:text-2xl font-black text-emerald-700">مرحباً بك يا سارة! 🌟</div>
+        </div>
+        <div class="flex items-center gap-3">
+            <button onclick="renderBadgesScreen()" class="bg-amber-100 hover:bg-amber-200 border-2 border-amber-300 px-3 py-2 rounded-2xl flex items-center gap-2 shadow-inner touch-target transition transform active:scale-95">
+                <span class="text-2xl">🏆</span>
+                <span id="badge-count" class="text-lg font-black text-amber-800 font-english">0</span>
+            </button>
+            <div class="bg-amber-500 text-white px-4 py-2 rounded-2xl flex items-center gap-2 shadow-md font-black text-lg">
+                <span>⭐</span>
+                <span id="star-count" class="font-english">0</span>
+            </div>
+            <button onclick="toggleAudioLang()" id="audio-toggle-btn" class="bg-sky-100 hover:bg-sky-200 text-sky-800 font-bold px-3 py-2 rounded-2xl border-2 border-sky-300 text-sm flex items-center gap-1 shadow touch-target">
+                🔊
+            </button>
+        </div>
+    </header>
+
+    <main id="app-container" class="flex-1 max-w-6xl w-full mx-auto p-4 sm:p-6 flex flex-col justify-center items-center">
+        <!-- Dynamic views rendered here -->
+    </main>
+
+    <div id="feedback-modal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full text-center shadow-2xl border-8 border-emerald-400 transform transition-all scale-95" id="modal-content">
+            <div id="modal-emoji" class="text-7xl mb-4 animate-float">🎉</div>
+            <h3 id="modal-title" class="text-2xl sm:text-3xl font-black text-emerald-700 mb-2">ممتاز!</h3>
+            <p id="modal-desc" class="text-lg sm:text-xl text-slate-600 mb-6">لقد أجبت بشكل صحيح يا بطل!</p>
+            <button onclick="closeModal()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-black text-xl py-4 rounded-2xl shadow-lg touch-target transition transform active:scale-95">
+                استمر يا بطل ✨
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // --- COMPREHENSIVE DATASETS (A-Z, Words, Sentences, Badges) ---
+        const ALPHABET_DEEP_DATA = [
+            { char: 'A', lower: 'a', sound: '/æ/', words: [{en: 'Apple', ar: 'تفاحة', emoji: '🍎'}, {en: 'Ant', ar: 'نملة', emoji: '🐜'}, {en: 'Alligator', ar: 'تمساح', emoji: '🐊'}], phrase: 'A says /æ/ as in apple.' },
+            { char: 'B', lower: 'b', sound: '/b/', words: [{en: 'Ball', ar: 'كرة', emoji: '⚽'}, {en: 'Banana', ar: 'موزة', emoji: '🍌'}, {en: 'Bear', ar: 'دب', emoji: '🐻'}], phrase: 'B says /b/ as in ball.' },
+            { char: 'C', lower: 'c', sound: '/k/', words: [{en: 'Cat', ar: 'قطة', emoji: '🐱'}, {en: 'Car', ar: 'سيارة', emoji: '🚗'}, {en: 'Cup', ar: 'كوب', emoji: '☕'}], phrase: 'C says /k/ as in cat.' },
+            { char: 'D', lower: 'd', sound: '/d/', words: [{en: 'Dog', ar: 'كلب', emoji: '🐶'}, {en: 'Duck', ar: 'بطة', emoji: '🦆'}, {en: 'Door', ar: 'باب', emoji: '🚪'}], phrase: 'D says /d/ as in dog.' },
+            { char: 'E', lower: 'e', sound: '/e/', words: [{en: 'Egg', ar: 'بيضة', emoji: '🥚'}, {en: 'Elephant', ar: 'فيل', emoji: '🐘'}, {en: 'Engine', ar: 'محرك', emoji: '🚂'}], phrase: 'E says /e/ as in egg.' },
+            { char: 'F', lower: 'f', sound: '/f/', words: [{en: 'Fish', ar: 'سمكة', emoji: '🐟'}, {en: 'Frog', ar: 'ضفدع', emoji: '🐸'}, {en: 'Fan', ar: 'مروحة', emoji: '🌀'}], phrase: 'F says /f/ as in fish.' },
+            { char: 'G', lower: 'g', sound: '/g/', words: [{en: 'Girl', ar: 'فتاة', emoji: '👧'}, {en: 'Goat', ar: 'معزة', emoji: '🐐'}, {en: 'Green', ar: 'أخضر', emoji: '🟢'}], phrase: 'G says /g/ as in girl.' },
+            { char: 'H', lower: 'h', sound: '/h/', words: [{en: 'Hat', ar: 'قبعة', emoji: '🎩'}, {en: 'House', ar: 'منزل', emoji: '🏠'}, {en: 'Horse', ar: 'حصان', emoji: '🐴'}], phrase: 'H says /h/ as in hat.' },
+            { char: 'I', lower: 'i', sound: '/ɪ/', words: [{en: 'Ice', ar: 'ثلج', emoji: '🧊'}, {en: 'Igloo', ar: 'كوخ ثلجي', emoji: '❄️'}, {en: 'Insect', ar: 'حشرة', emoji: '🐛'}], phrase: 'I says /ɪ/ as in ice.' },
+            { char: 'J', lower: 'j', sound: '/dʒ/', words: [{en: 'Juice', ar: 'عصير', emoji: '🧃'}, {en: 'Jacket', ar: 'سترة', emoji: '🧥'}, {en: 'Jam', ar: 'مربى', emoji: '🍯'}], phrase: 'J says /dʒ/ as in juice.' },
+            { char: 'K', lower: 'k', sound: '/k/', words: [{en: 'Kite', ar: 'طائرة ورقية', emoji: '🪁'}, {en: 'Kangaroo', ar: 'كنغر', emoji: '🦘'}, {en: 'Key', ar: 'مفتاح', emoji: '🔑'}], phrase: 'K says /k/ as in kite.' },
+            { char: 'L', lower: 'l', sound: '/l/', words: [{en: 'Lion', ar: 'أسد', emoji: '🦁'}, {en: 'Lamp', ar: 'مصباح', emoji: '💡'}, {en: 'Leaf', ar: 'ورقة شجر', emoji: '🍃'}], phrase: 'L says /l/ as in lion.' },
+            { char: 'M', lower: 'm', sound: '/m/', words: [{en: 'Monkey', ar: 'قرد', emoji: '🐵'}, {en: 'Milk', ar: 'حليب', emoji: '🥛'}, {en: 'Moon', ar: 'قمر', emoji: '🌙'}], phrase: 'M says /m/ as in monkey.' },
+            { char: 'N', lower: 'n', sound: '/n/', words: [{en: 'Nest', ar: 'عش', emoji: '🪺'}, {en: 'Net', ar: 'شبكة', emoji: '🥅'}, {en: 'Nut', ar: 'جوزة', emoji: '🥜'}], phrase: 'N says /n/ as in nest.' },
+            { char: 'O', lower: 'o', sound: '/ɒ/', words: [{en: 'Orange', ar: 'برتقالة', emoji: '🍊'}, {en: 'Owl', ar: 'بومة', emoji: '🦉'}, {en: 'Octopus', ar: 'أخطبوط', emoji: '🐙'}], phrase: 'O says /ɒ/ as in orange.' },
+            { char: 'P', lower: 'p', sound: '/p/', words: [{en: 'Pen', ar: 'قلم جاف', emoji: '🖊️'}, {en: 'Pencil', ar: 'قلم رصاص', emoji: '✏️'}, {en: 'Pig', ar: 'خنزير', emoji: '🐷'}], phrase: 'P says /p/ as in pen.' },
+            { char: 'Q', lower: 'q', sound: '/kw/', words: [{en: 'Queen', ar: 'ملكة', emoji: '👑'}, {en: 'Quilt', ar: 'لحاف', emoji: '🛏️'}, {en: 'Quiet', ar: 'هادئ', emoji: '🤫'}], phrase: 'Q says /kw/ as in queen.' },
+            { char: 'R', lower: 'r', sound: '/r/', words: [{en: 'Red', ar: 'أحمر', emoji: '🔴'}, {en: 'Rabbit', ar: 'أرنب', emoji: '🐰'}, {en: 'Ring', ar: 'خاتم', emoji: '💍'}], phrase: 'R says /r/ as in red.' },
+            { char: 'S', lower: 's', sound: '/s/', words: [{en: 'Sun', ar: 'شمس', emoji: '☀️'}, {en: 'Star', ar: 'نجمة', emoji: '⭐'}, {en: 'Snake', ar: 'ثعبان', emoji: '🐍'}], phrase: 'S says /s/ as in sun.' },
+            { char: 'T', lower: 't', sound: '/t/', words: [{en: 'Tree', ar: 'شجرة', emoji: '🌳'}, {en: 'Train', ar: 'قطار', emoji: '🚆'}, {en: 'Tiger', ar: 'نمر', emoji: '🐅'}], phrase: 'T says /t/ as in tree.' },
+            { char: 'U', lower: 'u', sound: '/ʌ/', words: [{en: 'Umbrella', ar: 'مظلة', emoji: '☂️'}, {en: 'Up', ar: 'إلى الأعلى', emoji: '⬆️'}, {en: 'Uniform', ar: 'زي موحد', emoji: '👔'}], phrase: 'U says /ʌ/ as in umbrella.' },
+            { char: 'V', lower: 'v', sound: '/v/', words: [{en: 'Van', ar: 'شاحنة', emoji: '🚐'}, {en: 'Violin', ar: 'كمان', emoji: '🎻'}, {en: 'Vase', ar: 'مزهرية', emoji: '🏺'}], phrase: 'V says /v/ as in van.' },
+            { char: 'W', lower: 'w', sound: '/w/', words: [{en: 'Water', ar: 'ماء', emoji: '💧'}, {en: 'Watch', ar: 'ساعة يد', emoji: '⌚'}, {en: 'Window', ar: 'نافذة', emoji: '🪟'}], phrase: 'W says /w/ as in water.' },
+            { char: 'X', lower: 'x', sound: '/ks/', words: [{en: 'X-ray', ar: 'أشعة إكس', emoji: '🦴'}, {en: 'Xylophone', ar: 'إكسيليفون', emoji: '🎹'}, {en: 'Box', ar: 'صندوق', emoji: '📦'}], phrase: 'X says /ks/ as in x-ray.' },
+            { char: 'Y', lower: 'y', sound: '/j/', words: [{en: 'Yellow', ar: 'أصفر', emoji: '🟡'}, {en: 'Yoyo', ar: 'لعبة اليويو', emoji: '🪀'}, {en: 'Yak', ar: 'ثور التبت', emoji: '🐃'}], phrase: 'Y says /j/ as in yellow.' },
+            { char: 'Z', lower: 'z', sound: '/z/', words: [{en: 'Zebra', ar: 'حمار وحشي', emoji: '🦓'}, {en: 'Zoo', ar: 'حديقة الحيوان', emoji: '🦁'}, {en: 'Zip', ar: 'سحاب', emoji: '🧥'}], phrase: 'Z says /z/ as in zebra.' }
+        ];
+
+        const THEMATIC_CATEGORIES = {
+            animals: {
+                title: 'حيوانات مذهلة',
+                icon: '🦁',
+                color: 'from-amber-400 to-orange-500',
+                words: [
+                    {en: 'Cat', ar: 'قطة', emoji: '🐱'}, {en: 'Dog', ar: 'كلب', emoji: '🐶'},
+                    {en: 'Lion', ar: 'أسد', emoji: '🦁'}, {en: 'Monkey', ar: 'قرد', emoji: '🐵'},
+                    {en: 'Elephant', ar: 'فيل', emoji: '🐘'}, {en: 'Rabbit', ar: 'أرنب', emoji: '🐰'},
+                    {en: 'Duck', ar: 'بطة', emoji: '🦆'}, {en: 'Frog', ar: 'ضفدع', emoji: '🐸'}
+                ]
+            },
+            colors: {
+                title: 'الألوان الجميلة',
+                icon: '🎨',
+                color: 'from-pink-400 to-rose-500',
+                words: [
+                    {en: 'Red', ar: 'أحمر', emoji: '🔴'}, {en: 'Blue', ar: 'أزرق', emoji: '🔵'},
+                    {en: 'Yellow', ar: 'أصفر', emoji: '🟡'}, {en: 'Green', ar: 'أخضر', emoji: '🟢'},
+                    {en: 'Orange', ar: 'برتقالي', emoji: '🟠'}, {en: 'Purple', ar: 'بنفسجي', emoji: '🟣'},
+                    {en: 'Black', ar: 'أسود', emoji: '⬛'}, {en: 'White', ar: 'أبيض', emoji: '⬜'}
+                ]
+            },
+            food: {
+                title: 'الأطعمة والفواكه',
+                icon: '🍎',
+                color: 'from-emerald-400 to-teal-500',
+                words: [
+                    {en: 'Apple', ar: 'تفاحة', emoji: '🍎'}, {en: 'Banana', ar: 'موزة', emoji: '🍌'},
+                    {en: 'Milk', ar: 'حليب', emoji: '🥛'}, {en: 'Juice', ar: 'عصير', emoji: '🧃'},
+                    {en: 'Egg', ar: 'بيضة', emoji: '🥚'}, {en: 'Water', ar: 'ماء', emoji: '💧'},
+                    {en: 'Cake', ar: 'كعكة', emoji: '🎂'}, {en: 'Bread', ar: 'خبز', emoji: '🍞'}
+                ]
+            },
+            school: {
+                title: 'أدوات المدرسة',
+                icon: '🎒',
+                color: 'from-blue-400 to-indigo-500',
+                words: [
+                    {en: 'Pen', ar: 'قلم جاف', emoji: '🖊️'}, {en: 'Pencil', ar: 'قلم رصاص', emoji: '✏️'},
+                    {en: 'Book', ar: 'كتاب', emoji: '📖'}, {en: 'Bag', ar: 'حقيبة', emoji: '🎒'},
+                    {en: 'Door', ar: 'باب', emoji: '🚪'}, {en: 'Key', ar: 'مفتاح', emoji: '🔑'}
+                ]
+            },
+            numbers: {
+                title: 'الأرقام 1 - 10',
+                icon: '🔢',
+                color: 'from-purple-400 to-violet-600',
+                words: [
+                    {en: 'One', ar: 'واحد (1)', emoji: '1️⃣'}, {en: 'Two', ar: 'اثنان (2)', emoji: '2️⃣'},
+                    {en: 'Three', ar: 'ثلاثة (3)', emoji: '3️⃣'}, {en: 'Four', ar: 'أربعة (4)', emoji: '4️⃣'},
+                    {en: 'Five', ar: 'خمسة (5)', emoji: '5️⃣'}, {en: 'Six', ar: 'ستة (6)', emoji: '6️⃣'},
+                    {en: 'Seven', ar: 'سبعة (7)', emoji: '7️⃣'}, {en: 'Eight', ar: 'ثمانية (8)', emoji: '8️⃣'},
+                    {en: 'Nine', ar: 'تسعة (9)', emoji: '9️⃣'}, {en: 'Ten', ar: 'عشرة (10)', emoji: '🔟'}
+                ]
+            }
+        };
+
+        const DAILY_SENTENCES = [
+            {en: 'Hello!', ar: 'أهلاً بك!', emoji: '👋'},
+            {en: 'Good morning!', ar: 'صباح الخير!', emoji: '☀️'},
+            {en: 'I am Ali.', ar: 'أنا علي.', emoji: '👦'},
+            {en: 'I am happy.', ar: 'أنا سعيد.', emoji: '😊'},
+            {en: 'This is a cat.', ar: 'هذه قطة.', emoji: '🐱'},
+            {en: 'It is red.', ar: 'إنه أحمر.', emoji: '🍎'},
+            {en: 'I have a pen.', ar: 'لدي قلم.', emoji: '🖊️'},
+            {en: 'I like tea.', ar: 'أحب الشاي.', emoji: '🍵'},
+            {en: 'Thank you!', ar: 'شكراً لك!', emoji: '🙏'},
+            {en: 'Goodbye!', ar: 'مع السلامة!', emoji: '✨'}
+        ];
+
+        const BADGES_LIST = [
+            { id: 'first_star', title: 'البداية المشرقة', desc: 'اكسب نجمتك الأولى', icon: '🌟', req: 1, type: 'stars' },
+            { id: 'star_master', title: 'جامع النجوم', desc: 'اكسب 15 نجمة', icon: '⭐', req: 15, type: 'stars' },
+            { id: 'alphabet_hero', title: 'بطل الحروف', desc: 'أتمم 5 حروف', icon: '🔤', req: 5, type: 'letters' },
+            { id: 'artist_kid', title: 'الرسام الصغير', desc: 'جرب لوحة الرسم مرتين', icon: '🎨', req: 2, type: 'traces' },
+            { id: 'game_champion', title: 'بطل الألعاب', desc: 'الفوز في 3 ألعاب', icon: '🏆', req: 3, type: 'games' }
+        ];
+
+        // Persistent App State
+        let appState = {
+            stars: parseInt(localStorage.getItem('kids_stars')) || 0,
+            completedLetters: JSON.parse(localStorage.getItem('kids_completed_letters')) || {},
+            tracesCount: parseInt(localStorage.getItem('kids_traces_count')) || 0,
+            gamesWon: parseInt(localStorage.getItem('kids_games_won')) || 0,
+            unlockedBadges: JSON.parse(localStorage.getItem('kids_badges')) || []
+        };
+
+        function saveState() {
+            localStorage.setItem('kids_stars', appState.stars);
+            localStorage.setItem('kids_completed_letters', JSON.stringify(appState.completedLetters));
+            localStorage.setItem('kids_traces_count', appState.tracesCount);
+            localStorage.setItem('kids_games_won', appState.gamesWon);
+            localStorage.setItem('kids_badges', JSON.stringify(appState.unlockedBadges));
+            updateHeaderUI();
+            checkBadgesUnlock();
+        }
+
+        function updateHeaderUI() {
+            document.getElementById('star-count').innerText = appState.stars;
+            document.getElementById('badge-count').innerText = appState.unlockedBadges.length;
+        }
+
+        function addStars(amount) {
+            appState.stars += amount;
+            saveState();
+            showEncouragement(amount);
+        }
+
+        function showEncouragement(starsEarned) {
+            const modal = document.getElementById('feedback-modal');
+            const emojis = ['🌟', '🎉', '🏆', '⭐', '🎈'];
+            const titles = ['ممتاز جداً!', 'رائع يا بطل!', 'أنت عبقري!', 'بطل المستقبل!'];
+            document.getElementById('modal-emoji').innerText = emojis[Math.floor(Math.random() * emojis.length)];
+            document.getElementById('modal-title').innerText = titles[Math.floor(Math.random() * titles.length)];
+            document.getElementById('modal-desc').innerText = `لقد ربحت ${starsEarned} نجوم جديدة! استمر في التألق.`;
+            modal.classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('feedback-modal').classList.add('hidden');
+        }
+
+        function checkBadgesUnlock() {
+            BADGES_LIST.forEach(badge => {
+                if (!appState.unlockedBadges.includes(badge.id)) {
+                    let unlocked = false;
+                    if (badge.type === 'stars' && appState.stars >= badge.req) unlocked = true;
+                    if (badge.type === 'letters' && Object.keys(appState.completedLetters).length >= badge.req) unlocked = true;
+                    if (badge.type === 'traces' && appState.tracesCount >= badge.req) unlocked = true;
+                    if (badge.type === 'games' && appState.gamesWon >= badge.req) unlocked = true;
+
+                    if (unlocked) {
+                        appState.unlockedBadges.push(badge.id);
+                        localStorage.setItem('kids_badges', JSON.stringify(appState.unlockedBadges));
+                        showBadgeUnlockedModal(badge);
+                    }
+                }
+            });
+        }
+
+        function showBadgeUnlockedModal(badge) {
+            const modal = document.getElementById('feedback-modal');
+            document.getElementById('modal-emoji').innerText = badge.icon;
+            document.getElementById('modal-title').innerText = `وسام جديد مفتوح: ${badge.title}`;
+            document.getElementById('modal-desc').innerText = badge.desc;
+            modal.classList.remove('hidden');
+        }
+
+        // Web Speech API Wrapper
+        function speak(text, lang = 'en-US') {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = lang;
+                utterance.rate = 0.85;
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        let audioEnabled = true;
+        function toggleAudioLang() {
+            audioEnabled = !audioEnabled;
+            speak(audioEnabled ? 'Audio enabled' : 'Audio disabled', audioEnabled ? 'en-US' : 'ar-SA');
+        }
+
+        // --- NAVIGATION & VIEWS ---
+        function navigateHome() {
+            renderHomeScreen();
+        }
+
+        function renderHomeScreen() {
+            const container = document.getElementById('app-container');
+            document.getElementById('header-title').innerText = 'مرحباً بك يا بطل! 🌟';
+            
+            container.innerHTML = `
+                <div class="text-center mb-8">
+                    <h1 class="text-3xl sm:text-5xl font-black text-emerald-600 mb-3">اختر نشاطاً ممتعاً لنبدأ</h1>
+                    <p class="text-lg text-slate-600">عالم رائع من التعلم التفاعلي والألعاب المصممة خصيصاً لك</p>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-5xl">
+                    <!-- Letters A-Z Deep Dive -->
+                    <button onclick="renderLettersMenu()" class="bg-gradient-to-br from-emerald-400 to-teal-600 hover:from-emerald-500 hover:to-teal-700 text-white p-6 rounded-3xl shadow-xl flex flex-col items-center justify-center gap-3 touch-target transition transform active:scale-95 border-b-8 border-emerald-800">
+                        <span class="text-6xl">🔤</span>
+                        <span class="text-2xl font-black">حروف الهجاء A-Z</span>
+                        <span class="text-sm bg-white/20 px-3 py-1 rounded-full">تعمق في كل حرف وكلماته</span>
+                    </button>
+
+                    <!-- Thematic Vocabulary Categories -->
+                    <button onclick="renderCategoriesMenu()" class="bg-gradient-to-br from-blue-400 to-indigo-600 hover:from-blue-500 hover:to-indigo-700 text-white p-6 rounded-3xl shadow-xl flex flex-col items-center justify-center gap-3 touch-target transition transform active:scale-95 border-b-8 border-indigo-800">
+                        <span class="text-6xl">🍎</span>
+                        <span class="text-2xl font-black">الكلمات والمجموعات</span>
+                        <span class="text-sm bg-white/20 px-3 py-1 rounded-full">حيوانات، ألوان، طعام وأكثر</span>
+                    </button>
+
+                    <!-- Daily Sentences -->
+                    <button onclick="renderSentencesScreen()" class="bg-gradient-to-br from-purple-400 to-violet-600 hover:from-purple-500 hover:to-violet-700 text-white p-6 rounded-3xl shadow-xl flex flex-col items-center justify-center gap-3 touch-target transition transform active:scale-95 border-b-8 border-purple-800">
+                        <span class="text-6xl">📖</span>
+                        <span class="text-2xl font-black">جمل ومحادثات يومية</span>
+                        <span class="text-sm bg-white/20 px-3 py-1 rounded-full">تحدث بثقة وطلاقة</span>
+                    </button>
+
+                    <!-- Tracing Studio -->
+                    <button onclick="renderTracingScreen()" class="bg-gradient-to-br from-amber-400 to-orange-600 hover:from-amber-500 hover:to-orange-700 text-white p-6 rounded-3xl shadow-xl flex flex-col items-center justify-center gap-3 touch-target transition transform active:scale-95 border-b-8 border-orange-800">
+                        <span class="text-6xl">✍️</span>
+                        <span class="text-2xl font-black">استوديو الرسم والتتبع</span>
+                        <span class="text-sm bg-white/20 px-3 py-1 rounded-full">تتبع الحروف بألوان مذهلة</span>
+                    </button>
+
+                    <!-- Advanced Mini-Games -->
+                    <button onclick="renderGamesMenu()" class="bg-gradient-to-br from-rose-400 to-red-600 hover:from-rose-500 hover:to-red-700 text-white p-6 rounded-3xl shadow-xl flex flex-col items-center justify-center gap-3 touch-target transition transform active:scale-95 border-b-8 border-red-800">
+                        <span class="text-6xl">🎮</span>
+                        <span class="text-2xl font-black">ألعاب التحدي والمرح</span>
+                        <span class="text-sm bg-white/20 px-3 py-1 rounded-full">5 ألعاب تفاعلية شيقة</span>
+                    </button>
+
+                    <!-- Badges & Rewards -->
+                    <button onclick="renderBadgesScreen()" class="bg-gradient-to-br from-cyan-400 to-blue-600 hover:from-cyan-500 hover:to-blue-700 text-white p-6 rounded-3xl shadow-xl flex flex-col items-center justify-center gap-3 touch-target transition transform active:scale-95 border-b-8 border-blue-800">
+                        <span class="text-6xl">🏆</span>
+                        <span class="text-2xl font-black">أوسمتي وإنجازاتي</span>
+                        <span class="text-sm bg-white/20 px-3 py-1 rounded-full">استعرض نجومك وأوسمتك</span>
+                    </button>
+                </div>
+            `;
+            updateHeaderUI();
+        }
+
+        function renderLettersMenu() {
+            const container = document.getElementById('app-container');
+            document.getElementById('header-title').innerText = 'حروف الهجاء A-Z';
+            
+            let html = `
+                <div class="flex items-center justify-between w-full mb-6">
+                    <button onclick="navigateHome()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold px-4 py-2 rounded-2xl touch-target">⬅ عودة</button>
+                    <h2 class="text-2xl sm:text-3xl font-black text-emerald-700">اختر حرفاً لتعلمه بعمق</h2>
+                    <div class="w-16"></div>
+                </div>
+                <div class="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-7 gap-4 w-full">
+            `;
+
+            ALPHABET_DEEP_DATA.forEach((item, index) => {
+                let isCompleted = appState.completedLetters[item.char];
+                html += `
+                    <button onclick="renderLetterDetail(${index})" class="bg-white hover:bg-emerald-50 border-4 ${isCompleted ? 'border-emerald-500 bg-emerald-50/50' : 'border-emerald-200'} p-4 rounded-3xl shadow-lg flex flex-col items-center justify-center touch-target transition transform active:scale-95 relative">
+                        ${isCompleted ? '<span class="absolute top-2 right-2 text-xs">⭐</span>' : ''}
+                        <span class="text-3xl sm:text-4xl font-black font-english text-emerald-600">${item.char}${item.lower}</span>
+                        <span class="text-2xl mt-1">${item.words[0].emoji}</span>
+                    </button>
+                `;
+            });
+
+            html += `</div>`;
+            container.innerHTML = html;
+        }
+
+        function renderLetterDetail(index) {
+            const item = ALPHABET_DEEP_DATA[index];
+            const container = document.getElementById('app-container');
+            document.getElementById('header-title').innerText = `حرف ${item.char}`;
+
+            container.innerHTML = `
+                <div class="flex items-center justify-between w-full mb-6">
+                    <button onclick="renderLettersMenu()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold px-4 py-2 rounded-2xl touch-target">⬅ الحروف</button>
+                    <div class="flex gap-2">
+                        <button onclick="renderLetterDetail(${index > 0 ? index - 1 : ALPHABET_DEEP_DATA.length - 1})" class="bg-emerald-100 hover:bg-emerald-200 text-emerald-800 px-4 py-2 rounded-2xl font-bold">السابق</button>
+                        <button onclick="renderLetterDetail(${index < ALPHABET_DEEP_DATA.length - 1 ? index + 1 : 0})" class="bg-emerald-100 hover:bg-emerald-200 text-emerald-800 px-4 py-2 rounded-2xl font-bold">التالي</button>
+                    </div>
+                </div>
+
+                <div class="bg-white border-8 border-emerald-300 rounded-3xl p-6 sm:p-8 shadow-2xl max-w-2xl w-full text-center flex flex-col items-center">
+                    <div class="text-8xl sm:text-9xl font-black font-english text-emerald-600 mb-2">${item.char} <span class="text-slate-400">${item.lower}</span></div>
+                    <div class="bg-emerald-50 border-2 border-emerald-200 px-6 py-2 rounded-2xl text-xl font-bold text-emerald-800 mb-4">
+                        الصوت: <span class="font-english">${item.sound}</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full mb-6">
+                        ${item.words.map(w => `
+                            <div onclick="speak('${w.en}')" class="bg-slate-50 hover:bg-emerald-50 border-2 border-slate-200 hover:border-emerald-300 p-4 rounded-2xl flex flex-col items-center cursor-pointer touch-target transition">
+                                <span class="text-5xl mb-2">${w.emoji}</span>
+                                <span class="text-xl font-black font-english text-emerald-700">${w.en}</span>
+                                <span class="text-sm font-bold text-slate-600">${w.ar}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+
+                    <div class="bg-sky-50 border-2 border-sky-200 p-4 rounded-2xl w-full mb-6">
+                        <p class="text-lg text-sky-900 font-bold">${item.phrase}</p>
+                    </div>
+
+                    <div class="flex flex-wrap gap-4 justify-center w-full">
+                        <button onclick="speak('${item.phrase}')" class="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white font-black text-xl py-4 px-6 rounded-2xl shadow-lg touch-target flex items-center justify-center gap-2">
+                            🔊 استمع للصوت الكامل
+                        </button>
+                        <button onclick="completeLetter('${item.char}')" class="flex-1 bg-amber-500 hover:bg-amber-600 text-white font-black text-xl py-4 px-6 rounded-2xl shadow-lg touch-target flex items-center justify-center gap-2">
+                            ⭐ أتممت تعلم هذا الحرف
+                        </button>
+                    </div>
+                </div>
+            `;
+            speak(item.phrase);
+        }
+
+        function completeLetter(char) {
+            appState.completedLetters[char] = true;
+            addStars(3);
+            renderLettersMenu();
+        }
+
+        function renderCategoriesMenu() {
+            const container = document.getElementById('app-container');
+            document.getElementById('header-title').innerText = 'المجموعات والكلمات';
+
+            container.innerHTML = `
+                <div class="flex items-center justify-between w-full mb-6">
+                    <button onclick="navigateHome()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold px-4 py-2 rounded-2xl touch-target">⬅ عودة</button>
+                    <h2 class="text-2xl sm:text-3xl font-black text-blue-700">اختر مجموعة لتعلم كلماتها</h2>
+                    <div class="w-16"></div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-5xl">
+                    ${Object.keys(THEMATIC_CATEGORIES).map(key => {
+                        let cat = THEMATIC_CATEGORIES[key];
+                        return `
+                            <button onclick="renderCategoryWords('${key}')" class="bg-gradient-to-br ${cat.color} text-white p-6 rounded-3xl shadow-xl flex flex-col items-center justify-center gap-3 touch-target transition transform active:scale-95 border-b-8 border-black/20">
+                                <span class="text-6xl">${cat.icon}</span>
+                                <span class="text-2xl font-black">${cat.title}</span>
+                                <span class="text-sm bg-white/20 px-3 py-1 rounded-full">${cat.words.length} كلمات ممتعة</span>
+                            </button>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+        }
+
+        function renderCategoryWords(catKey) {
+            const cat = THEMATIC_CATEGORIES[catKey];
+            const container = document.getElementById('app-container');
+            document.getElementById('header-title').innerText = cat.title;
+
+            container.innerHTML = `
+                <div class="flex items-center justify-between w-full mb-6">
+                    <button onclick="renderCategoriesMenu()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold px-4 py-2 rounded-2xl touch-target">⬅ المجموعات</button>
+                    <h2 class="text-2xl font-black text-slate-800">${cat.icon} ${cat.title}</h2>
+                    <div class="w-16"></div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 w-full">
+                    ${cat.words.map(w => `
+                        <div onclick="speak('${w.en}')" class="bg-white hover:bg-blue-50 border-4 border-slate-200 hover:border-blue-400 p-6 rounded-3xl shadow-xl flex flex-col items-center text-center touch-target cursor-pointer transition transform active:scale-95">
+                            <span class="text-6xl mb-3">${w.emoji}</span>
+                            <span class="text-2xl font-black font-english text-blue-600 mb-1">${w.en}</span>
+                            <span class="text-lg font-bold text-slate-700">${w.ar}</span>
+                            <span class="mt-3 bg-blue-100 text-blue-800 px-3 py-1 rounded-xl text-xs font-bold">🔊 استمع</span>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        function renderSentencesScreen() {
+            const container = document.getElementById('app-container');
+            document.getElementById('header-title').innerText = 'جمل ومحادثات يومية';
+
+            container.innerHTML = `
+                <div class="flex items-center justify-between w-full mb-6">
+                    <button onclick="navigateHome()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold px-4 py-2 rounded-2xl touch-target">⬅ عودة</button>
+                    <h2 class="text-2xl sm:text-3xl font-black text-purple-700">تحدث بجمل قصيرة وجميلة</h2>
+                    <div class="w-16"></div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 w-full max-w-4xl">
+                    ${DAILY_SENTENCES.map(item => `
+                        <div onclick="speak('${item.en}')" class="bg-white hover:bg-purple-50 border-4 border-purple-200 p-6 rounded-3xl shadow-xl flex items-center justify-between touch-target cursor-pointer transition transform active:scale-95">
+                            <div class="flex items-center gap-4">
+                                <span class="text-5xl">${item.emoji}</span>
+                                <div>
+                                    <div class="text-2xl font-black font-english text-purple-700 mb-1">${item.en}</div>
+                                    <div class="text-lg font-bold text-slate-700">${item.ar}</div>
+                                </div>
+                            </div>
+                            <span class="text-3xl">🔊</span>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        function renderTracingScreen() {
+            const container = document.getElementById('app-container');
+            document.getElementById('header-title').innerText = 'استوديو الرسم والتتبع';
+
+            let currentIdx = 0;
+            const currentLetter = ALPHABET_DEEP_DATA[currentIdx];
+
+            container.innerHTML = `
+                <div class="flex items-center justify-between w-full mb-4">
+                    <button onclick="navigateHome()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold px-4 py-2 rounded-2xl touch-target">⬅ عودة</button>
+                    <div class="text-xl font-bold text-amber-700">ارسم الحرف بإصبعك بكل حرية</div>
+                    <div class="w-16"></div>
+                </div>
+
+                <div class="bg-white border-8 border-amber-300 rounded-3xl p-6 shadow-2xl flex flex-col items-center max-w-md w-full">
+                    <div class="flex justify-between w-full mb-4 items-center">
+                        <button onclick="changeTracingIdx(-1)" class="bg-amber-100 hover:bg-amber-200 text-amber-800 font-bold px-3 py-2 rounded-xl">السابق</button>
+                        <span id="tracing-display" class="text-4xl font-black font-english text-amber-600">${currentLetter.char} ${currentLetter.lower}</span>
+                        <button onclick="changeTracingIdx(1)" class="bg-amber-100 hover:bg-amber-200 text-amber-800 font-bold px-3 py-2 rounded-xl">التالي</button>
+                    </div>
+
+                    <div class="relative w-72 h-72 sm:w-80 sm:h-80 bg-amber-50 border-4 border-dashed border-amber-300 rounded-2xl flex items-center justify-center shadow-inner overflow-hidden">
+                        <div id="canvas-guide" class="absolute text-9xl font-black font-english text-slate-200 select-none">${currentLetter.char}</div>
+                        <canvas id="draw-canvas" width="320" height="320" class="absolute inset-0 cursor-crosshair"></canvas>
+                    </div>
+
+                    <!-- Color palette -->
+                    <div class="flex gap-2 my-4">
+                        <button onclick="setBrushColor('#d97706')" class="w-10 h-10 rounded-full bg-amber-600 border-2 border-white shadow"></button>
+                        <button onclick="setBrushColor('#dc2626')" class="w-10 h-10 rounded-full bg-red-600 border-2 border-white shadow"></button>
+                        <button onclick="setBrushColor('#2563eb')" class="w-10 h-10 rounded-full bg-blue-600 border-2 border-white shadow"></button>
+                        <button onclick="setBrushColor('#059669')" class="w-10 h-10 rounded-full bg-emerald-600 border-2 border-white shadow"></button>
+                        <button onclick="setBrushColor('#7c3aed')" class="w-10 h-10 rounded-full bg-purple-600 border-2 border-white shadow"></button>
+                    </div>
+
+                    <div class="flex gap-4 w-full">
+                        <button onclick="clearCanvas()" class="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-3 rounded-2xl touch-target">مسح 🧹</button>
+                        <button onclick="finishTracing()" class="flex-1 bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 rounded-2xl touch-target shadow-lg">أتممت الرسم ⭐</button>
+                    </div>
+                </div>
+            `;
+            initCanvas();
+        }
+
+        let traceIdx = 0;
+        function changeTracingIdx(dir) {
+            traceIdx = (traceIdx + dir + ALPHABET_DEEP_DATA.length) % ALPHABET_DEEP_DATA.length;
+            const letter = ALPHABET_DEEP_DATA[traceIdx];
+            document.getElementById('tracing-display').innerText = `${letter.char} ${letter.lower}`;
+            document.getElementById('canvas-guide').innerText = letter.char;
+            clearCanvas();
+        }
+
+        let canvas, ctx, drawing = false, brushColor = '#d97706';
+        function initCanvas() {
+            canvas = document.getElementById('draw-canvas');
+            ctx = canvas.getContext('2d');
+            ctx.lineWidth = 14;
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = brushColor;
+
+            canvas.onmousedown = startDraw;
+            canvas.onmousemove = draw;
+            canvas.onmouseup = stopDraw;
+            canvas.onmouseleave = stopDraw;
+
+            canvas.ontouchstart = (e) => { e.preventDefault(); startDraw(e.touches[0]); };
+            canvas.ontouchmove = (e) => { e.preventDefault(); draw(e.touches[0]); };
+            canvas.ontouchend = stopDraw;
+        }
+
+        function setBrushColor(color) {
+            brushColor = color;
+            if (ctx) ctx.strokeStyle = brushColor;
+        }
+
+        function getMousePos(e) {
+            const rect = canvas.getBoundingClientRect();
+            return {
+                x: (e.clientX || e.pageX) - rect.left,
+                y: (e.clientY || e.pageY) - rect.top
+            };
+        }
+
+        function startDraw(e) {
+            drawing = true;
+            const pos = getMousePos(e);
+            ctx.beginPath();
+            ctx.moveTo(pos.x, pos.y);
+        }
+
+        function draw(e) {
+            if (!drawing) return;
+            const pos = getMousePos(e);
+            ctx.lineTo(pos.x, pos.y);
+            ctx.stroke();
+        }
+
+        function stopDraw() {
+            drawing = false;
+        }
+
+        function clearCanvas() {
+            if (ctx && canvas) ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function finishTracing() {
+            appState.tracesCount++;
+            addStars(2);
+            saveState();
+            clearCanvas();
+        }
+
+        function renderGamesMenu() {
+            const container = document.getElementById('app-container');
+            document.getElementById('header-title').innerText = 'ألعاب التحدي والمرح';
+
+            container.innerHTML = `
+                <div class="flex items-center justify-between w-full mb-6">
+                    <button onclick="navigateHome()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold px-4 py-2 rounded-2xl touch-target">⬅ عودة</button>
+                    <h2 class="text-2xl sm:text-3xl font-black text-rose-700">اختر لعبة مبهرة</h2>
+                    <div class="w-16"></div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-5xl">
+                    <!-- Game 1: Balloon Pop -->
+                    <button onclick="startBalloonGame()" class="bg-gradient-to-br from-rose-400 to-red-600 text-white p-6 rounded-3xl shadow-xl flex flex-col items-center justify-center gap-3 touch-target border-b-8 border-red-800">
+                        <span class="text-6xl">🎈</span>
+                        <span class="text-2xl font-black">فرقعة البالونات</span>
+                        <span class="text-sm bg-white/20 px-3 py-1 rounded-full">ابحث عن الحرف الصحيح</span>
+                    </button>
+                    <!-- Game 2: Memory Card Match -->
+                    <button onclick="startMemoryGame()" class="bg-gradient-to-br from-indigo-400 to-purple-600 text-white p-6 rounded-3xl shadow-xl flex flex-col items-center justify-center gap-3 touch-target border-b-8 border-indigo-800">
+                        <span class="text-6xl">🧠</span>
+                        <span class="text-2xl font-black">لعبة الذاكرة المطابقة</span>
+                        <span class="text-sm bg-white/20 px-3 py-1 rounded-full">اربط الصور المتشابهة</span>
+                    </button>
+                    <!-- Game 3: Listen & Choose -->
+                    <button onclick="startListenGame()" class="bg-gradient-to-br from-amber-400 to-orange-600 text-white p-6 rounded-3xl shadow-xl flex flex-col items-center justify-center gap-3 touch-target border-b-8 border-orange-800">
+                        <span class="text-6xl">👂</span>
+                        <span class="text-2xl font-black">استمع واختر</span>
+                        <span class="text-sm bg-white/20 px-3 py-1 rounded-full">اختبر قوة سمعك</span>
+                    </button>
+                    <!-- Game 4: Word Builder / Spelling -->
+                    <button onclick="startSpellingGame()" class="bg-gradient-to-br from-emerald-400 to-teal-600 text-white p-6 rounded-3xl shadow-xl flex flex-col items-center justify-center gap-3 touch-target border-b-8 border-teal-800">
+                        <span class="text-6xl">🧩</span>
+                        <span class="text-2xl font-black">تركيب الكلمات</span>
+                        <span class="text-sm bg-white/20 px-3 py-1 rounded-full">رتب الحروف لتكون كلمة</span>
+                    </button>
+                    <!-- Game 5: Picture to Word Match -->
+                    <button onclick="startPicWordGame()" class="bg-gradient-to-br from-blue-400 to-indigo-600 text-white p-6 rounded-3xl shadow-xl flex flex-col items-center justify-center gap-3 touch-target border-b-8 border-blue-800">
+                        <span class="text-6xl">🖼️</span>
+                        <span class="text-2xl font-black">الصورة والكلمة</span>
+                        <span class="text-sm bg-white/20 px-3 py-1 rounded-full">طابق كل صورة بمعناها</span>
+                    </button>
+                </div>
+            `;
+        }
+
+        // --- GAME 1: BALLOON POP ---
+        function startBalloonGame() {
+            const container = document.getElementById('app-container');
+            let target = ALPHABET_DEEP_DATA[Math.floor(Math.random() * ALPHABET_DEEP_DATA.length)];
+            let options = [target];
+            while (options.length < 4) {
+                let rand = ALPHABET_DEEP_DATA[Math.floor(Math.random() * ALPHABET_DEEP_DATA.length)];
+                if (!options.includes(rand)) options.push(rand);
+            }
+            options.sort(() => 0.5 - Math.random());
+
+            document.getElementById('header-title').innerText = 'فرقعة البالونات';
+
+            container.innerHTML = `
+                <div class="flex items-center justify-between w-full mb-6">
+                    <button onclick="renderGamesMenu()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold px-4 py-2 rounded-2xl touch-target">⬅ الألعاب</button>
+                    <div class="text-xl sm:text-2xl font-black text-rose-700">فرقع البالون الذي يحتوي على الحرف: <span class="font-english text-3xl">${target.char}</span></div>
+                    <div class="w-16"></div>
+                </div>
+
+                <div class="bg-white border-8 border-rose-300 rounded-3xl p-8 shadow-2xl max-w-lg w-full text-center flex flex-col items-center">
+                    <div class="text-7xl mb-4 animate-float">${target.words[0].emoji}</div>
+                    <div class="grid grid-cols-2 gap-6 w-full mt-4">
+                        ${options.map(opt => `
+                            <button onclick="checkBalloonAnswer('${opt.char}', '${target.char}')" class="bg-gradient-to-t from-rose-500 to-pink-400 hover:from-rose-600 hover:to-pink-500 text-white font-black text-6xl py-8 rounded-full shadow-xl touch-target flex flex-col items-center justify-center font-english transition transform active:scale-90 border-b-8 border-rose-700">
+                                🎈
+                                <span class="text-4xl mt-1">${opt.char}</span>
+                            </button>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+            speak(`Pop balloon ${target.char}`);
+        }
+
+        function checkBalloonAnswer(selected, correct) {
+            if (selected === correct) {
+                appState.gamesWon++;
+                addStars(3);
+                saveState();
+                setTimeout(() => startBalloonGame(), 1200);
+            } else {
+                speak('Try again');
+                alert('حاول مرة أخرى يا بطل!');
+            }
+        }
+
+        // --- GAME 2: MEMORY CARD MATCH ---
+        function startMemoryGame() {
+            const container = document.getElementById('app-container');
+            let items = [...ALPHABET_DEEP_DATA].sort(() => 0.5 - Math.random()).slice(0, 4);
+            let deck = [...items, ...items].sort(() => 0.5 - Math.random());
+            
+            document.getElementById('header-title').innerText = 'لعبة الذاكرة';
+
+            let firstCard = null;
+            let lockBoard = false;
+            let matchedPairs = 0;
+
+            container.innerHTML = `
+                <div class="flex items-center justify-between w-full mb-6">
+                    <button onclick="renderGamesMenu()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold px-4 py-2 rounded-2xl touch-target">⬅ الألعاب</button>
+                    <div class="text-xl font-bold text-indigo-700">ابحث عن البطاقات المتطابقة</div>
+                    <div class="w-16"></div>
+                </div>
+
+                <div class="grid grid-cols-4 gap-4 max-w-lg w-full" id="memory-board">
+                    ${deck.map((item, idx) => `
+                        <button id="card-${idx}" data-char="${item.char}" onclick="flipMemoryCard(${idx}, '${item.char}')" class="h-28 bg-indigo-500 hover:bg-indigo-600 border-4 border-indigo-300 rounded-2xl text-4xl font-black text-white flex items-center justify-center shadow-lg touch-target transition transform active:scale-95">
+                            ❓
+                        </button>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        let memFirst = null, memLock = false, memMatches = 0;
+        function flipMemoryCard(idx, char) {
+            if (memLock) return;
+            const btn = document.getElementById(`card-${idx}`);
+            if (btn.classList.contains('revealed')) return;
+
+            btn.innerText = char;
+            btn.classList.remove('bg-indigo-500');
+            btn.classList.add('bg-white', 'text-indigo-700', 'revealed');
+
+            if (!memFirst) {
+                memFirst = { idx, char };
+            } else {
+                if (memFirst.char === char) {
+                    memFirst = null;
+                    memMatches++;
+                    if (memMatches === 4) {
+                        appState.gamesWon++;
+                        addStars(4);
+                        saveState();
+                        setTimeout(() => startMemoryGame(), 1500);
+                    }
+                } else {
+                    memLock = true;
+                    setTimeout(() => {
+                        document.getElementById(`card-${memFirst.idx}`).innerText = '❓';
+                        document.getElementById(`card-${memFirst.idx}`).classList.remove('bg-white', 'text-indigo-700', 'revealed');
+                        document.getElementById(`card-${memFirst.idx}`).classList.add('bg-indigo-500');
+
+                        btn.innerText = '❓';
+                        btn.classList.remove('bg-white', 'text-indigo-700', 'revealed');
+                        btn.classList.add('bg-indigo-500');
+
+                        memFirst = null;
+                        memLock = false;
+                    }, 1000);
+                }
+            }
+        }
+
+        // --- GAME 3: LISTEN & CHOOSE ---
+        function startListenGame() {
+            const container = document.getElementById('app-container');
+            let target = ALPHABET_DEEP_DATA[Math.floor(Math.random() * ALPHABET_DEEP_DATA.length)];
+            let options = [target];
+            while (options.length < 3) {
+                let rand = ALPHABET_DEEP_DATA[Math.floor(Math.random() * ALPHABET_DEEP_DATA.length)];
+                if (!options.includes(rand)) options.push(rand);
+            }
+            options.sort(() => 0.5 - Math.random());
+
+            document.getElementById('header-title').innerText = 'استمع واختر';
+
+            container.innerHTML = `
+                <div class="flex items-center justify-between w-full mb-6">
+                    <button onclick="renderGamesMenu()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold px-4 py-2 rounded-2xl touch-target">⬅ الألعاب</button>
+                    <div class="text-2xl font-black text-amber-700">استمع للصوت واكتشف الكلمة الصحيحة</div>
+                    <div class="w-16"></div>
+                </div>
+
+                <div class="bg-white border-8 border-amber-300 rounded-3xl p-8 shadow-2xl max-w-md w-full text-center flex flex-col items-center">
+                    <button onclick="speak('${target.words[0].en}')" class="bg-amber-500 hover:bg-amber-600 text-white font-black text-3xl p-6 rounded-3xl shadow-xl mb-6 touch-target flex items-center gap-3">
+                        🔊 اضغط للاستماع
+                    </button>
+                    <div class="grid grid-cols-3 gap-4 w-full">
+                        ${options.map(opt => `
+                            <button onclick="checkListenAnswer('${opt.words[0].en}', '${target.words[0].en}')" class="bg-amber-100 hover:bg-amber-200 border-4 border-amber-400 text-amber-900 p-4 rounded-2xl shadow-lg touch-target flex flex-col items-center">
+                                <span class="text-4xl mb-1">${opt.words[0].emoji}</span>
+                                <span class="font-english font-black text-lg">${opt.words[0].en}</span>
+                            </button>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+            speak(target.words[0].en);
+        }
+
+        function checkListenAnswer(selected, correct) {
+            if (selected === correct) {
+                appState.gamesWon++;
+                addStars(3);
+                saveState();
+                setTimeout(() => startListenGame(), 1200);
+            } else {
+                speak('Try again');
+                alert('حاول مرة أخرى يا بطل!');
+            }
+        }
+
+        // --- GAME 4: WORD BUILDER / SPELLING ---
+        function startSpellingGame() {
+            const container = document.getElementById('app-container');
+            const wordsList = ['cat', 'dog', 'sun', 'hat', 'cup', 'pen', 'bus', 'red'];
+            let targetWord = wordsList[Math.floor(Math.random() * wordsList.length)];
+            let letters = targetWord.split('').sort(() => 0.5 - Math.random());
+
+            let targetItem = THEMATIC_CATEGORIES.animals.words.find(w => w.en.toLowerCase() === targetWord) ||
+                             THEMATIC_CATEGORIES.food.words.find(w => w.en.toLowerCase() === targetWord) ||
+                             {en: targetWord, ar: 'كلمة سهلة', emoji: '⭐'};
+
+            document.getElementById('header-title').innerText = 'تركيب الكلمات';
+
+            let selectedLetters = [];
+
+            container.innerHTML = `
+                <div class="flex items-center justify-between w-full mb-6">
+                    <button onclick="renderGamesMenu()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold px-4 py-2 rounded-2xl touch-target">⬅ الألعاب</button>
+                    <div class="text-2xl font-black text-emerald-700">رتّب الحروف لتكوين الكلمة الصحيحة</div>
+                    <div class="w-16"></div>
+                </div>
+
+                <div class="bg-white border-8 border-emerald-300 rounded-3xl p-8 shadow-2xl max-w-md w-full text-center flex flex-col items-center">
+                    <div class="text-7xl mb-4">${targetItem.emoji || '⭐'}</div>
+                    <div id="spelling-slot" class="text-4xl font-black font-english text-emerald-700 tracking-widest min-h-[60px] bg-emerald-50 border-2 border-emerald-200 w-full rounded-2xl flex items-center justify-center mb-6">
+                        _ _ _
+                    </div>
+                    <div class="flex gap-3 justify-center mb-6" id="spelling-tiles">
+                        ${letters.map((l, i) => `
+                            <button onclick="selectSpellingLetter('${l}', this, '${targetWord}')" class="bg-emerald-500 hover:bg-emerald-600 text-white font-black text-3xl w-16 h-16 rounded-2xl shadow-lg font-english touch-target">
+                                ${l}
+                            </button>
+                        `).join('')}
+                    </div>
+                    <button onclick="startSpellingGame()" class="bg-slate-200 text-slate-700 font-bold px-4 py-2 rounded-xl">كلمة أخرى 🔄</button>
+                </div>
+            `;
+            window.currentSpelling = { target: targetWord, current: '' };
+        }
+
+        function selectSpellingLetter(letter, btn, target) {
+            btn.style.opacity = '0.3';
+            btn.disabled = true;
+            window.currentSpelling.current += letter;
+            document.getElementById('spelling-slot').innerText = window.currentSpelling.current;
+
+            if (window.currentSpelling.current === target) {
+                appState.gamesWon++;
+                addStars(4);
+                saveState();
+                setTimeout(() => startSpellingGame(), 1200);
+            } else if (window.currentSpelling.current.length === target.length) {
+                speak('Try again');
+                alert('حاول مرة أخرى!');
+                startSpellingGame();
+            }
+        }
+
+        // --- GAME 5: PICTURE TO WORD MATCH ---
+        function startPicWordGame() {
+            const container = document.getElementById('app-container');
+            let pool = THEMATIC_CATEGORIES.animals.words;
+            let target = pool[Math.floor(Math.random() * pool.length)];
+            let options = [target];
+            while (options.length < 3) {
+                let rand = pool[Math.floor(Math.random() * pool.length)];
+                if (!options.includes(rand)) options.push(rand);
+            }
+            options.sort(() => 0.5 - Math.random());
+
+            document.getElementById('header-title').innerText = 'الصورة والكلمة';
+
+            container.innerHTML = `
+                <div class="flex items-center justify-between w-full mb-6">
+                    <button onclick="renderGamesMenu()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold px-4 py-2 rounded-2xl touch-target">⬅ الألعاب</button>
+                    <div class="text-2xl font-black text-blue-700">اختر الكلمة الإنجليزية المناسبة للصورة</div>
+                    <div class="w-16"></div>
+                </div>
+
+                <div class="bg-white border-8 border-blue-300 rounded-3xl p-8 shadow-2xl max-w-md w-full text-center flex flex-col items-center">
+                    <div class="text-8xl mb-6 animate-float">${target.emoji}</div>
+                    <div class="text-xl font-bold text-slate-700 mb-6">${target.ar}</div>
+                    <div class="grid grid-cols-3 gap-4 w-full">
+                        ${options.map(opt => `
+                            <button onclick="checkPicWordAnswer('${opt.en}', '${target.en}')" class="bg-blue-100 hover:bg-blue-200 border-4 border-blue-400 text-blue-900 font-black font-english text-xl py-4 rounded-2xl shadow-lg touch-target">
+                                ${opt.en}
+                            </button>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+            speak(target.en);
+        }
+
+        function checkPicWordAnswer(selected, correct) {
+            if (selected === correct) {
+                appState.gamesWon++;
+                addStars(3);
+                saveState();
+                setTimeout(() => startPicWordGame(), 1200);
+            } else {
+                speak('Try again');
+                alert('حاول مرة أخرى!');
+            }
+        }
+
+        function renderBadgesScreen() {
+            const container = document.getElementById('app-container');
+            document.getElementById('header-title').innerText = 'أوسمتي وإنجازاتي';
+
+            container.innerHTML = `
+                <div class="flex items-center justify-between w-full mb-6">
+                    <button onclick="navigateHome()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold px-4 py-2 rounded-2xl touch-target">⬅ عودة</button>
+                    <h2 class="text-2xl sm:text-3xl font-black text-amber-700">سجل إنجازاتك الرائعة</h2>
+                    <div class="w-16"></div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-4xl">
+                    ${BADGES_LIST.map(badge => {
+                        let unlocked = appState.unlockedBadges.includes(badge.id);
+                        return `
+                            <div class="bg-white border-4 ${unlocked ? 'border-amber-400 bg-amber-50/50' : 'border-slate-200 opacity-60'} p-6 rounded-3xl shadow-xl flex items-center gap-4">
+                                <span class="text-6xl">${badge.icon}</span>
+                                <div>
+                                    <h3 class="text-xl font-black text-slate-800">${badge.title}</h3>
+                                    <p class="text-sm text-slate-600">${badge.desc}</p>
+                                    <span class="inline-block mt-2 text-xs font-bold px-3 py-1 rounded-full ${unlocked ? 'bg-amber-200 text-amber-900' : 'bg-slate-200 text-slate-600'}">
+                                        ${unlocked ? '✨ تم الفتح' : '🔒 مغلق'}
+                                    </span>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+        }
+
+        // Initialize App on Window Load
+        window.onload = function() {
+            renderHomeScreen();
+            updateHeaderUI();
+        };
+    </script>
+</body>
+</html>
